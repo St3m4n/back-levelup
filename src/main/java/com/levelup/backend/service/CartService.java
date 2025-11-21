@@ -49,14 +49,33 @@ public class CartService {
     @Transactional
     public CartDto replaceCart(UpdateCartRequest request) {
         Usuario usuario = getCurrentUser();
-        List<CartItemRequest> requestedItems = request == null ? List.of() : request.getItems();
-        List<CartItem> validatedItems = validateAndMapItems(requestedItems);
+        List<CartItemRequest> requestedItems = request == null ? null : request.getItems();
+        boolean forceReplace = request != null && request.isForceReplace();
 
-        Cart cart = cartRepository.findByUsuarioRun(usuario.getRun())
-                .orElseGet(() -> Cart.builder()
+        Cart existingCart = cartRepository.findByUsuarioRun(usuario.getRun()).orElse(null);
+
+        if (requestedItems == null || requestedItems.isEmpty()) {
+            if (!forceReplace) {
+                if (existingCart == null) {
+                    return CartDto.builder()
+                            .userRun(usuario.getRun())
+                            .items(List.of())
+                            .totalQuantity(0)
+                            .updatedAt(null)
+                            .build();
+                }
+                return toDto(existingCart);
+            }
+        }
+
+        List<CartItem> validatedItems = validateAndMapItems(requestedItems == null ? List.of() : requestedItems);
+
+        Cart cart = existingCart != null
+                ? existingCart
+                : Cart.builder()
                         .usuario(usuario)
                         .items(new ArrayList<>())
-                        .build());
+                        .build();
         if (cart.getId() == null) {
             cart.setItems(new ArrayList<>(validatedItems));
         } else {
