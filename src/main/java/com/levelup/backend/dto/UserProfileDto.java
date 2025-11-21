@@ -1,5 +1,6 @@
 package com.levelup.backend.dto;
 
+import com.levelup.backend.dto.levelup.LevelUpStatsDto;
 import com.levelup.backend.model.UsuarioPerfil;
 import java.time.LocalDate;
 import lombok.Builder;
@@ -19,4 +20,5 @@ public class UserProfileDto {
     private final String direccion;
     private final boolean descuentoVitalicio;
     private final boolean systemAccount;
+    private final LevelUpStatsDto levelUpStats;
 }

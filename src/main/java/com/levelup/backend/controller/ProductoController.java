@@ -2,6 +2,7 @@ package com.levelup.backend.controller;
 
 import com.levelup.backend.dto.producto.CreateProductoRequest;
 import com.levelup.backend.dto.producto.ProductoDto;
+import com.levelup.backend.dto.producto.PatchProductoRequest;
 import com.levelup.backend.dto.producto.UpdateProductoRequest;
 import com.levelup.backend.service.ProductoService;
 import jakarta.validation.Valid;
@@ -9,7 +10,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -56,5 +59,16 @@ public class ProductoController {
     @PostMapping("/{codigo}/restore")
     public ResponseEntity<ProductoDto> restore(@PathVariable String codigo) {
         return ResponseEntity.ok(productoService.restoreProduct(codigo));
+    }
+
+    @DeleteMapping("/{codigo}")
+    public ResponseEntity<ProductoDto> delete(@PathVariable String codigo) {
+        return ResponseEntity.ok(productoService.softDeleteProduct(codigo));
+    }
+
+    @PatchMapping("/{codigo}")
+    public ResponseEntity<ProductoDto> patchDeletionStatus(@PathVariable String codigo,
+                                                           @Valid @RequestBody PatchProductoRequest request) {
+        return ResponseEntity.ok(productoService.updateDeletionStatus(codigo, request));
     }
 }

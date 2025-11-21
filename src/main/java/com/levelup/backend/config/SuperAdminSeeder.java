@@ -50,7 +50,7 @@ public class SuperAdminSeeder implements CommandLineRunner {
                 .apellidos("Administrador")
                 .correo(correo)
                 .perfil(UsuarioPerfil.Administrador)
-                .region("Metropolitana")
+                .region("Metropolitana de Santiago")
                 .comuna("Santiago Centro")
                 .direccion("Nivel Up HQ")
                 .descuentoVitalicio(true)

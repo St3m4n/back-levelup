@@ -1,6 +1,7 @@
 package com.levelup.backend.service;
 
 import com.levelup.backend.dto.producto.CreateProductoRequest;
+import com.levelup.backend.dto.producto.PatchProductoRequest;
 import com.levelup.backend.dto.producto.ProductoDto;
 import com.levelup.backend.dto.producto.UpdateProductoRequest;
 import com.levelup.backend.model.Categoria;
@@ -10,7 +11,6 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("nullness")
 public class ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaService categoriaService;
@@ -55,6 +56,7 @@ public class ProductoService {
     }
 
     @Transactional
+    @SuppressWarnings("nullness")
     public ProductoDto createProduct(CreateProductoRequest request) {
         String normalizedCodigo = normalizeCodigo(request.getCodigo());
         String codigo = normalizedCodigo == null || normalizedCodigo.isBlank()
@@ -77,14 +79,15 @@ public class ProductoService {
                 .imagenUrl(trimToNull(request.getImagenUrl()))
                 .build();
         try {
-            Producto saved = productoRepository.save(producto);
-            return toDto(saved);
+            productoRepository.save(producto);
+            return toDto(producto);
         } catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo crear el producto con el código " + codigo);
         }
     }
 
     @Transactional
+    @SuppressWarnings("nullness")
     public ProductoDto updateProduct(String codigo, UpdateProductoRequest request) {
         Producto producto = findByCodigoOrThrow(codigo);
         producto.setNombre(request.getNombre().trim());
@@ -96,25 +99,45 @@ public class ProductoService {
         producto.setStock(request.getStock());
         producto.setStockCritico(request.getStockCritico());
         producto.setImagenUrl(trimToNull(request.getImagenUrl()));
-        return toDto(productoRepository.save(producto));
+        productoRepository.save(producto);
+        return toDto(producto);
     }
 
     @Transactional
+    @SuppressWarnings("nullness")
     public ProductoDto softDeleteProduct(String codigo) {
         Producto producto = findByCodigoOrThrow(codigo);
         if (producto.getDeletedAt() == null) {
             producto.setDeletedAt(LocalDateTime.now());
         }
-        return toDto(productoRepository.save(producto));
+        productoRepository.save(producto);
+        return toDto(producto);
     }
 
     @Transactional
+    @SuppressWarnings("nullness")
     public ProductoDto restoreProduct(String codigo) {
         Producto producto = findByCodigoOrThrow(codigo);
         if (producto.getDeletedAt() != null) {
             producto.setDeletedAt(null);
         }
-        return toDto(productoRepository.save(producto));
+        productoRepository.save(producto);
+        return toDto(producto);
+    }
+
+    @Transactional
+    @SuppressWarnings("nullness")
+    public ProductoDto updateDeletionStatus(String codigo, PatchProductoRequest request) {
+        Producto producto = findByCodigoOrThrow(codigo);
+        if (Boolean.TRUE.equals(request.getEliminado())) {
+            if (producto.getDeletedAt() == null) {
+                producto.setDeletedAt(LocalDateTime.now());
+            }
+        } else if (Boolean.FALSE.equals(request.getEliminado())) {
+            producto.setDeletedAt(null);
+        }
+        productoRepository.save(producto);
+        return toDto(producto);
     }
 
     private Producto findByCodigoOrThrow(String codigo) {

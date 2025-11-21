@@ -5,6 +5,7 @@ import com.levelup.backend.dto.auth.AuthResponse;
 import com.levelup.backend.dto.auth.LoginRequest;
 import com.levelup.backend.dto.auth.RegisterRequest;
 import com.levelup.backend.dto.levelup.LevelUpReferralResponse;
+import com.levelup.backend.dto.levelup.LevelUpStatsDto;
 import com.levelup.backend.model.Usuario;
 import com.levelup.backend.model.UsuarioPerfil;
 import com.levelup.backend.repository.UsuarioRepository;
@@ -43,7 +44,8 @@ public class AuthService {
         }
         LevelUpUserDetails details = new LevelUpUserDetails(usuario);
         String token = tokenProvider.generateToken(details);
-        return buildResponse(usuario, token);
+        LevelUpStatsDto stats = levelUpStatsService.fetchStats(usuario.getRun());
+        return buildResponse(usuario, token, stats);
     }
 
     @Transactional
@@ -85,12 +87,13 @@ public class AuthService {
                 log.warn("No se aplicó código de referido {} para {}: {}", referralCode, run, referral.getReason());
             }
         }
+        LevelUpStatsDto stats = levelUpStatsService.fetchStats(nuevo.getRun());
         LevelUpUserDetails details = new LevelUpUserDetails(nuevo);
         String token = tokenProvider.generateToken(details);
-        return buildResponse(nuevo, token);
+        return buildResponse(nuevo, token, stats);
     }
 
-    private UserProfileDto toDto(Usuario usuario) {
+    private UserProfileDto toDto(Usuario usuario, LevelUpStatsDto levelUpStats) {
         return UserProfileDto.builder()
                 .run(usuario.getRun())
                 .nombre(usuario.getNombre())
@@ -103,14 +106,15 @@ public class AuthService {
                 .direccion(usuario.getDireccion())
                 .descuentoVitalicio(usuario.isDescuentoVitalicio())
                 .systemAccount(usuario.isSystemAccount())
+                .levelUpStats(levelUpStats)
                 .build();
     }
 
-    private AuthResponse buildResponse(Usuario usuario, String token) {
+    private AuthResponse buildResponse(Usuario usuario, String token, LevelUpStatsDto levelUpStats) {
         return AuthResponse.builder()
                 .token(token)
                 .tokenType("Bearer")
-                .user(toDto(usuario))
+                .user(toDto(usuario, levelUpStats))
                 .build();
     }
 

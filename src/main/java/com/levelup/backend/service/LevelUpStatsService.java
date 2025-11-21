@@ -58,9 +58,13 @@ public class LevelUpStatsService {
     @Transactional(readOnly = true)
     public LevelUpStatsDto getStats(String run) {
         authorize(run);
-        Usuario usuario = usuarioRepository.findByRun(normalizeRun(run))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado: " + run));
-        LevelUpStats stats = ensureStatsForUsuario(usuario);
+        LevelUpStats stats = loadStatsByRun(run);
+        return toDto(stats);
+    }
+
+    @Transactional
+    public LevelUpStatsDto fetchStats(String run) {
+        LevelUpStats stats = loadStatsByRun(run);
         return toDto(stats);
     }
 
@@ -147,7 +151,7 @@ public class LevelUpStatsService {
                 .referralCode(stats.getReferralCode())
                 .referredBy(stats.getReferredBy())
                 .referidos(LevelUpReferidosDto.builder()
-                        .count(stats.getExpReferidos())
+                        .count(referrals.size())
                         .users(referrals)
                         .build())
                 .updatedAt(stats.getUpdatedAt())
@@ -192,11 +196,12 @@ public class LevelUpStatsService {
         }
         LocalDateTime now = LocalDateTime.now();
         target.setPoints(target.getPoints() + REFERIDO_USA_CODIGO);
+        target.setExpReferidos(target.getExpReferidos() + REFERIDO_USA_CODIGO);
         target.setReferredBy(owner.getRun());
         target.setUpdatedAt(now);
 
         owner.setPoints(owner.getPoints() + REFERENTE_GANA);
-        owner.setExpReferidos(owner.getExpReferidos() + 1);
+        owner.setExpReferidos(owner.getExpReferidos() + REFERENTE_GANA);
         owner.setUpdatedAt(now);
 
         String normalizedEmail = EmailUtils.normalizeCorreo(request.getNewEmail());
@@ -260,6 +265,16 @@ public class LevelUpStatsService {
         if (!admin && !actorRun.equals(normalizedRun)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No autorizado");
         }
+    }
+
+    private LevelUpStats loadStatsByRun(String run) {
+        String normalizedRun = normalizeRun(run);
+        if (normalizedRun.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado: " + run);
+        }
+        Usuario usuario = usuarioRepository.findByRun(normalizedRun)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado: " + normalizedRun));
+        return ensureStatsForUsuario(usuario);
     }
 
     private String generateUniqueReferralCode() {
