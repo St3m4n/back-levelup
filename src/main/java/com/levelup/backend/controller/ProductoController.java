@@ -26,9 +26,15 @@ public class ProductoController {
 
     @GetMapping
     public ResponseEntity<List<ProductoDto>> list(@RequestParam(defaultValue = "false") boolean includeDeleted,
-                                                   @RequestParam(required = false) String category,
-                                                   @RequestParam(required = false) String query) {
+                                                  @RequestParam(required = false) String category,
+                                                  @RequestParam(required = false) String query) {
         return ResponseEntity.ok(productoService.list(includeDeleted, category, query));
+    }
+
+    @GetMapping("/{codigo}")
+    public ResponseEntity<ProductoDto> getOne(@PathVariable String codigo,
+                                              @RequestParam(defaultValue = "false") boolean includeDeleted) {
+        return ResponseEntity.ok(productoService.getProduct(codigo, includeDeleted));
     }
 
     @PostMapping

@@ -4,29 +4,34 @@ import com.levelup.backend.dto.UserProfileDto;
 import com.levelup.backend.dto.auth.AuthResponse;
 import com.levelup.backend.dto.auth.LoginRequest;
 import com.levelup.backend.dto.auth.RegisterRequest;
+import com.levelup.backend.dto.levelup.LevelUpReferralResponse;
 import com.levelup.backend.model.Usuario;
 import com.levelup.backend.model.UsuarioPerfil;
 import com.levelup.backend.repository.UsuarioRepository;
 import com.levelup.backend.security.JwtTokenProvider;
 import com.levelup.backend.security.LevelUpUserDetails;
+import com.levelup.backend.util.EmailUtils;
 import com.levelup.backend.util.PasswordUtils;
+import com.levelup.backend.util.RunUtils;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final JwtTokenProvider tokenProvider;
+    private final LevelUpStatsService levelUpStatsService;
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        String correo = normalizeCorreo(request.getCorreo());
+        String correo = EmailUtils.normalizeCorreo(request.getCorreo());
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
         if (usuario.getPasswordHash() == null || usuario.getPasswordSalt() == null) {
@@ -43,8 +48,8 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        String correo = normalizeCorreo(request.getCorreo());
-        String run = normalizeRun(request.getRun());
+        String correo = EmailUtils.normalizeCorreo(request.getCorreo());
+        String run = RunUtils.normalizeRun(request.getRun());
         if (correo.isBlank() || run.isBlank()) {
             throw new IllegalArgumentException("RUN y correo son obligatorios");
         }
@@ -72,6 +77,14 @@ public class AuthService {
                 .passwordSalt(salt)
                 .build();
         usuarioRepository.save(nuevo);
+        levelUpStatsService.ensureStatsForUsuario(nuevo);
+        String referralCode = request.getReferralCode();
+        if (referralCode != null && !referralCode.isBlank()) {
+            LevelUpReferralResponse referral = levelUpStatsService.applyReferralOnRegistration(run, referralCode, correo);
+            if (!referral.isOk()) {
+                log.warn("No se aplicó código de referido {} para {}: {}", referralCode, run, referral.getReason());
+            }
+        }
         LevelUpUserDetails details = new LevelUpUserDetails(nuevo);
         String token = tokenProvider.generateToken(details);
         return buildResponse(nuevo, token);
@@ -99,20 +112,6 @@ public class AuthService {
                 .tokenType("Bearer")
                 .user(toDto(usuario))
                 .build();
-    }
-
-    private String normalizeCorreo(String correo) {
-        if (correo == null) {
-            return "";
-        }
-        return correo.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String normalizeRun(String run) {
-        if (run == null) {
-            return "";
-        }
-        return run.replaceAll("[^0-9kK]", "").toUpperCase(Locale.ROOT);
     }
 
     private boolean correoEndsDuoc(String correo) {

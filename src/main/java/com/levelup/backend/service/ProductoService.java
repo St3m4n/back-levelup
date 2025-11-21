@@ -41,6 +41,19 @@ public class ProductoService {
         return productos.stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public ProductoDto getProduct(String codigo, boolean includeDeleted) {
+        Producto producto = findByCodigoOrThrow(codigo);
+        if (!includeDeleted && producto.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado: " + producto.getCodigo());
+        }
+        return toDto(producto);
+    }
+
+    public ProductoDto getProduct(String codigo) {
+        return getProduct(codigo, false);
+    }
+
     @Transactional
     public ProductoDto createProduct(CreateProductoRequest request) {
         String normalizedCodigo = normalizeCodigo(request.getCodigo());

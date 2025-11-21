@@ -1,6 +1,7 @@
 package com.levelup.backend.security;
 
 import com.levelup.backend.model.Usuario;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;
@@ -18,7 +19,12 @@ public class LevelUpUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + user.getPerfil().name().toUpperCase()));
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getPerfil().name().toUpperCase()));
+        if (user.isSystemAccount()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_SUPERADMIN"));
+        }
+        return authorities;
     }
 
     @Override
