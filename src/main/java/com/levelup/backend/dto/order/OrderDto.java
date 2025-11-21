@@ -22,5 +22,6 @@ public class OrderDto {
     private final String comuna;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
+    private final LocalDateTime deletedAt;
     private final List<OrderItemDto> items;
 }

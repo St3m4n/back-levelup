@@ -64,4 +64,9 @@ public class OrderController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{orderId}/restore")
+    public ResponseEntity<OrderDto> restore(@PathVariable String orderId) {
+        return ResponseEntity.ok(orderService.restore(orderId));
+    }
+
 }

@@ -120,6 +120,21 @@ public class OrderService {
         }
     }
 
+    @Transactional
+    public OrderDto restore(String orderId) {
+        LevelUpUserDetails principal = getPrincipal();
+        if (!isAdmin(principal)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo administradores pueden restaurar órdenes");
+        }
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Orden no encontrada"));
+        if (order.getDeletedAt() != null) {
+            order.setDeletedAt(null);
+            order = orderRepository.save(order);
+        }
+        return toDto(order);
+    }
+
     private Specification<Order> includeDeletedSpec(boolean includeDeleted) {
         if (includeDeleted) {
             return null;
@@ -188,6 +203,7 @@ public class OrderService {
                 .comuna(order.getComuna())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                .deletedAt(order.getDeletedAt())
                 .items(items)
                 .build();
     }
