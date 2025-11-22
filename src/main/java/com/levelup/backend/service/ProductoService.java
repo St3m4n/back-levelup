@@ -82,7 +82,8 @@ public class ProductoService {
             productoRepository.save(producto);
             return toDto(producto);
         } catch (DataIntegrityViolationException ex) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo crear el producto con el código " + codigo);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se pudo crear el producto con el código " + codigo);
         }
     }
 
@@ -146,7 +147,8 @@ public class ProductoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido");
         }
         return productoRepository.findByCodigo(normalized)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no encontrado: " + normalized));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Producto no encontrado: " + normalized));
     }
 
     private Specification<Producto> includeDeletedSpec(Boolean includeDeleted) {
@@ -226,6 +228,7 @@ public class ProductoService {
                 .stockCritico(producto.getStockCritico())
                 .imagenUrl(producto.getImagenUrl())
                 .eliminado(producto.getDeletedAt() != null)
+                .deletedAt(producto.getDeletedAt())
                 .createdAt(producto.getCreatedAt())
                 .updatedAt(producto.getUpdatedAt())
                 .build();

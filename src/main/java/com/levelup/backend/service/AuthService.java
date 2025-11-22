@@ -82,7 +82,8 @@ public class AuthService {
         levelUpStatsService.ensureStatsForUsuario(nuevo);
         String referralCode = request.getReferralCode();
         if (referralCode != null && !referralCode.isBlank()) {
-            LevelUpReferralResponse referral = levelUpStatsService.applyReferralOnRegistration(run, referralCode, correo);
+            LevelUpReferralResponse referral = levelUpStatsService.applyReferralOnRegistration(run, referralCode,
+                    correo);
             if (!referral.isOk()) {
                 log.warn("No se aplicó código de referido {} para {}: {}", referralCode, run, referral.getReason());
             }
@@ -94,6 +95,7 @@ public class AuthService {
     }
 
     private UserProfileDto toDto(Usuario usuario, LevelUpStatsDto levelUpStats) {
+        String referralCode = levelUpStats != null ? levelUpStats.getReferralCode() : null;
         return UserProfileDto.builder()
                 .run(usuario.getRun())
                 .nombre(usuario.getNombre())
@@ -106,6 +108,7 @@ public class AuthService {
                 .direccion(usuario.getDireccion())
                 .descuentoVitalicio(usuario.isDescuentoVitalicio())
                 .systemAccount(usuario.isSystemAccount())
+                .referralCode(referralCode)
                 .levelUpStats(levelUpStats)
                 .build();
     }

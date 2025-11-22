@@ -20,5 +20,6 @@ public class UserProfileDto {
     private final String direccion;
     private final boolean descuentoVitalicio;
     private final boolean systemAccount;
+    private final String referralCode;
     private final LevelUpStatsDto levelUpStats;
 }

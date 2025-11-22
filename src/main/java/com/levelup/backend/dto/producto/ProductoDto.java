@@ -19,6 +19,7 @@ public class ProductoDto {
     private final int stockCritico;
     private final String imagenUrl;
     private final boolean eliminado;
+    private final LocalDateTime deletedAt;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 }
